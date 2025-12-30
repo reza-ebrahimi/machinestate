@@ -5,13 +5,16 @@ A fast, single-binary system state reporter for Ubuntu/Linux. Generates comprehe
 ## Features
 
 - **Comprehensive System Analysis**
-  - CPU, memory, load average, uptime
+  - CPU, memory, load average, uptime, timezone
   - Disk usage and inode status
   - Network interfaces and listening ports
-  - Package updates (APT)
+  - Package updates (APT and Snap)
   - Systemd service status
   - Security checks (firewall, SSH, failed logins)
   - Hardware health (battery, temperatures, crash reports)
+  - Docker containers and images
+  - GPU monitoring (NVIDIA, AMD, Intel)
+  - Log analysis (errors, OOM events, kernel panics)
 
 - **Multiple Output Formats**
   - Terminal (colored)
@@ -31,7 +34,12 @@ A fast, single-binary system state reporter for Ubuntu/Linux. Generates comprehe
 - **MCP Server Integration**
   - Run as Model Context Protocol (MCP) server
   - Integrate with Claude Code and other MCP clients
-  - 12 tools for querying system state programmatically
+  - 16 tools for querying system state programmatically
+
+- **Configurable Thresholds**
+  - YAML config file support
+  - Customize warning/critical thresholds
+  - Set via `--config` flag
 
 ## Installation
 
@@ -83,6 +91,8 @@ ubuntu-state --format all --output ./reports/
 | `--compare` | Compare with the last saved report |
 | `--no-save` | Don't save this report to history |
 | `--quiet` | Suppress terminal output when using `--format all` |
+| `--json-compact` | Output minified JSON (single line) |
+| `--config` | Path to YAML config file (default: ~/.config/ubuntu-state/config.yaml) |
 | `--mcp` | Run as MCP server (stdio transport for Claude Code) |
 | `--version` | Show version |
 
@@ -135,14 +145,18 @@ The HTML report features a dark theme with:
 
 | Category | Metrics |
 |----------|---------|
-| **System** | Hostname, OS, kernel, uptime, load average, CPU cores/usage |
+| **System** | Hostname, OS, kernel, uptime, timezone, reboot required, load average, CPU cores/usage |
 | **Memory** | Total, used, free, percentage, swap usage |
 | **Disk** | Mount points, size, used, free, percentage, inodes |
 | **Network** | Interfaces (state, IPs, traffic), listening ports, connectivity |
-| **Packages** | Updates available, security updates, broken/held packages |
+| **Packages** | APT updates, security updates, broken/held packages |
+| **Snaps** | Installed snaps, disk usage, pending refreshes |
 | **Services** | Failed systemd units, zombie processes, top CPU/memory processes |
 | **Security** | Firewall status, SSH status, failed logins (24h), open ports |
 | **Hardware** | Battery (capacity, health, cycles), temperatures, crash reports |
+| **Docker** | Running/stopped containers, images, disk usage, dangling images |
+| **GPU** | NVIDIA/AMD/Intel GPUs: temperature, utilization, memory, power |
+| **Logs** | Error counts (24h), OOM events, kernel panics, segfaults, top errors |
 
 ## History Storage
 
@@ -176,13 +190,17 @@ claude mcp add-json ubuntu-state '{"type":"stdio","command":"/path/to/ubuntu-sta
 |------|-------------|
 | `get_system_report` | Complete system state snapshot |
 | `get_issues` | Detected issues with optional severity filter |
-| `get_system_info` | CPU, memory, load, uptime |
+| `get_system_info` | CPU, memory, load, uptime, timezone |
 | `get_disk_info` | Filesystem usage (optional mount point filter) |
 | `get_network_info` | Interfaces, ports, connectivity |
 | `get_package_info` | APT updates status |
 | `get_service_info` | Systemd services, processes |
 | `get_security_info` | Firewall, SSH, failed logins |
 | `get_hardware_info` | Battery, temps, crash reports |
+| `get_docker_info` | Docker containers, images, disk usage |
+| `get_snap_info` | Snap packages, disk usage, pending refreshes |
+| `get_gpu_info` | GPU temperature, utilization, memory |
+| `get_log_info` | Log analysis (errors, OOM, panics) |
 | `list_reports` | List saved report IDs |
 | `get_report` | Load a saved report by ID |
 | `compare_reports` | Compare two reports |
@@ -239,15 +257,21 @@ sudo systemctl enable --now ubuntu-state.timer
 ```
 ubuntu-state/
 ├── main.go              # CLI entry point
+├── config/
+│   └── config.go        # Configuration loading (YAML)
 ├── collectors/          # Data collection modules
 │   ├── collector.go     # Main collector + issue analysis
-│   ├── system.go        # CPU, memory, load
+│   ├── system.go        # CPU, memory, load, timezone
 │   ├── disk.go          # Filesystem info
 │   ├── network.go       # Network interfaces, ports
 │   ├── packages.go      # APT package status
 │   ├── services.go      # Systemd services, processes
 │   ├── security.go      # Firewall, SSH, logins
-│   └── hardware.go      # Battery, temps, crashes
+│   ├── hardware.go      # Battery, temps, crashes
+│   ├── docker.go        # Docker containers, images
+│   ├── snaps.go         # Snap packages
+│   ├── gpu.go           # GPU monitoring
+│   └── logs.go          # Log analysis
 ├── models/
 │   └── report.go        # Data structures
 ├── outputs/
@@ -258,7 +282,7 @@ ubuntu-state/
 ├── history/
 │   └── history.go       # Save/load/compare reports
 └── mcpserver/
-    └── server.go        # MCP server with all tools
+    └── server.go        # MCP server with 16 tools
 ```
 
 ## License

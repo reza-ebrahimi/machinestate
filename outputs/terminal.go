@@ -40,8 +40,15 @@ func RenderTerminal(report *models.Report) string {
 	infoStyle.Fprintf(&sb, "%s\n", report.OS.Kernel)
 	dimStyle.Fprintf(&sb, "  Uptime:   ")
 	infoStyle.Fprintf(&sb, "%s\n", report.System.UptimeHuman)
+	if report.System.Timezone != "" {
+		dimStyle.Fprintf(&sb, "  Timezone: ")
+		infoStyle.Fprintf(&sb, "%s\n", report.System.Timezone)
+	}
 	dimStyle.Fprintf(&sb, "  Report:   ")
 	infoStyle.Fprintf(&sb, "%s\n", report.Timestamp.Format("2006-01-02 15:04:05"))
+	if report.System.RebootRequired {
+		warningStyle.Fprintf(&sb, "  ⚠ Reboot Required\n")
+	}
 	sb.WriteString("\n")
 
 	// Issues summary
@@ -194,6 +201,110 @@ func RenderTerminal(report *models.Report) string {
 			renderKVWithColor(sb, "Crash Reports", fmt.Sprintf("%d in /var/crash", len(report.Hardware.CrashReports)), warningStyle)
 		}
 	})
+
+	// Docker section
+	if report.Docker.Available {
+		renderSection(&sb, "DOCKER", func(sb *strings.Builder) {
+			if !report.Docker.DaemonRunning {
+				renderKVWithColor(sb, "Docker Daemon", "Not Running", errorStyle)
+				return
+			}
+			renderKV(sb, "Running Containers", fmt.Sprintf("%d", report.Docker.RunningCount))
+			if report.Docker.StoppedCount > 0 {
+				renderKVWithColor(sb, "Stopped Containers", fmt.Sprintf("%d", report.Docker.StoppedCount), dimStyle)
+			}
+			renderKV(sb, "Images", fmt.Sprintf("%d (%s)", report.Docker.ImageCount, formatBytes(uint64(report.Docker.TotalImageSize))))
+			if report.Docker.DanglingImages > 0 {
+				renderKVWithColor(sb, "Dangling Images", formatBytes(uint64(report.Docker.DanglingImages)), warningStyle)
+			}
+
+			if len(report.Docker.Containers) > 0 {
+				sb.WriteString("\n")
+				dimStyle.Fprint(sb, "  Running Containers:\n")
+				for _, c := range report.Docker.Containers {
+					if c.State == "running" {
+						fmt.Fprintf(sb, "    %-20s %s (%.1f%% CPU, %.1f%% Mem)\n",
+							truncate(c.Name, 20), truncate(c.Image, 25), c.CPUPercent, c.MemoryPercent)
+					}
+				}
+			}
+		})
+	}
+
+	// Snaps section
+	if report.Snaps.Available && len(report.Snaps.Snaps) > 0 {
+		renderSection(&sb, "SNAPS", func(sb *strings.Builder) {
+			renderKV(sb, "Installed Snaps", fmt.Sprintf("%d", len(report.Snaps.Snaps)))
+			renderKV(sb, "Total Disk Usage", formatBytes(uint64(report.Snaps.TotalDiskUsage)))
+			if report.Snaps.PendingRefreshes > 0 {
+				renderKVWithColor(sb, "Pending Refreshes", fmt.Sprintf("%d", report.Snaps.PendingRefreshes), warningStyle)
+			}
+		})
+	}
+
+	// GPU section
+	if report.GPU.Available && len(report.GPU.GPUs) > 0 {
+		renderSection(&sb, "GPU", func(sb *strings.Builder) {
+			for _, gpu := range report.GPU.GPUs {
+				sb.WriteString("\n")
+				dimStyle.Fprintf(sb, "  [%d] %s (%s)\n", gpu.Index, gpu.Name, gpu.Vendor)
+				if gpu.Temperature > 0 {
+					tempStr := fmt.Sprintf("%d°C", gpu.Temperature)
+					if gpu.Temperature >= 90 {
+						fmt.Fprintf(sb, "      Temperature:  ")
+						errorStyle.Fprintf(sb, "%s\n", tempStr)
+					} else if gpu.Temperature >= 80 {
+						fmt.Fprintf(sb, "      Temperature:  ")
+						warningStyle.Fprintf(sb, "%s\n", tempStr)
+					} else {
+						fmt.Fprintf(sb, "      Temperature:  %s\n", tempStr)
+					}
+				}
+				if gpu.Utilization > 0 {
+					fmt.Fprintf(sb, "      Utilization:  %d%%\n", gpu.Utilization)
+				}
+				if gpu.MemoryTotal > 0 {
+					fmt.Fprintf(sb, "      Memory:       %s / %s\n",
+						formatBytes(uint64(gpu.MemoryUsed)), formatBytes(uint64(gpu.MemoryTotal)))
+				}
+				if gpu.PowerDraw > 0 {
+					fmt.Fprintf(sb, "      Power Draw:   %.1fW\n", gpu.PowerDraw)
+				}
+			}
+		})
+	}
+
+	// Logs section
+	if report.Logs.Available {
+		renderSection(&sb, "LOGS (24h)", func(sb *strings.Builder) {
+			if report.Logs.Stats.CriticalCount > 0 {
+				renderKVWithColor(sb, "Critical", fmt.Sprintf("%d", report.Logs.Stats.CriticalCount), errorStyle)
+			}
+			if report.Logs.Stats.ErrorCount > 0 {
+				renderKVWithColor(sb, "Errors", fmt.Sprintf("%d", report.Logs.Stats.ErrorCount), warningStyle)
+			}
+			if report.Logs.Stats.WarningCount > 0 {
+				renderKV(sb, "Warnings", fmt.Sprintf("%d", report.Logs.Stats.WarningCount))
+			}
+			if report.Logs.Stats.OOMEvents > 0 {
+				renderKVWithColor(sb, "OOM Events", fmt.Sprintf("%d", report.Logs.Stats.OOMEvents), errorStyle)
+			}
+			if report.Logs.Stats.KernelPanics > 0 {
+				renderKVWithColor(sb, "Kernel Panics", fmt.Sprintf("%d", report.Logs.Stats.KernelPanics), criticalStyle)
+			}
+			if report.Logs.Stats.Segfaults > 0 {
+				renderKVWithColor(sb, "Segfaults", fmt.Sprintf("%d", report.Logs.Stats.Segfaults), warningStyle)
+			}
+
+			if len(report.Logs.Stats.TopErrors) > 0 {
+				sb.WriteString("\n")
+				dimStyle.Fprint(sb, "  Top Error Patterns:\n")
+				for _, e := range report.Logs.Stats.TopErrors {
+					fmt.Fprintf(sb, "    [%d] %s\n", e.Count, truncate(e.Pattern, 60))
+				}
+			}
+		})
+	}
 
 	// Detailed issues
 	renderIssuesDetail(&sb, report.Issues)

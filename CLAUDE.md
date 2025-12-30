@@ -27,6 +27,7 @@ go mod tidy
 ### Directory Structure
 
 - `main.go` - CLI entry point using standard `flag` package
+- `config/` - Configuration loading and defaults (YAML config support)
 - `collectors/` - Data collection modules (one file per category)
 - `models/report.go` - All data structures used across the app
 - `outputs/` - Output formatters (terminal, HTML, JSON, markdown)
@@ -45,15 +46,20 @@ go mod tidy
 
 ```
 main.go
+  └── config.Init()               # Load config from YAML
   └── collectors.CollectAll()
         ├── CollectOSInfo()
-        ├── CollectSystemInfo()    # CPU, memory, load
+        ├── CollectSystemInfo()    # CPU, memory, load, timezone, reboot status
         ├── CollectDiskInfo()      # Filesystems
         ├── CollectNetworkInfo()   # Interfaces, ports
         ├── CollectPackageInfo()   # APT status
         ├── CollectServiceInfo()   # Systemd, processes
         ├── CollectSecurityInfo()  # Firewall, SSH
         ├── CollectHardwareInfo()  # Battery, temps
+        ├── CollectDockerInfo()    # Docker containers, images
+        ├── CollectSnapInfo()      # Snap packages
+        ├── CollectGPUInfo()       # GPU temp, memory, utilization
+        ├── CollectLogInfo()       # Log analysis (24h)
         └── analyzeIssues()        # Generate issue list
   └── history.Save(report)
   └── outputs.Render*(report)      # Format output
@@ -78,6 +84,7 @@ main.go
 - `github.com/shirou/gopsutil/v3` - System metrics (CPU, memory, disk, network, processes)
 - `github.com/fatih/color` - Terminal colors
 - `github.com/mark3labs/mcp-go` - MCP server implementation
+- `gopkg.in/yaml.v3` - YAML config file parsing
 
 ## MCP Server
 
@@ -93,7 +100,7 @@ The tool can run as an MCP (Model Context Protocol) server for integration with 
 
 The MCP server is implemented in `mcpserver/server.go`:
 - Uses stdio transport (stdin/stdout for JSON-RPC)
-- Registers 12 tools that expose all collectors
+- Registers 16 tools that expose all collectors
 - Returns JSON responses for all tools
 
 ### Available Tools
@@ -109,6 +116,10 @@ The MCP server is implemented in `mcpserver/server.go`:
 | `get_service_info` | `collectors.CollectServiceInfo()` | none |
 | `get_security_info` | `collectors.CollectSecurityInfo()` | none |
 | `get_hardware_info` | `collectors.CollectHardwareInfo()` | none |
+| `get_docker_info` | `collectors.CollectDockerInfo()` | none |
+| `get_snap_info` | `collectors.CollectSnapInfo()` | none |
+| `get_gpu_info` | `collectors.CollectGPUInfo()` | none |
+| `get_log_info` | `collectors.CollectLogInfo()` | none |
 | `list_reports` | `history.List()` | `limit` (optional) |
 | `get_report` | `history.Load()` | `id` (required) |
 | `compare_reports` | `history.Compare()` | `old_id`, `new_id` (required) |
@@ -131,11 +142,28 @@ echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | ./ubuntu-state --mcp
 echo '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"get_issues"},"id":2}' | ./ubuntu-state --mcp
 ```
 
+## Configuration
+
+Thresholds are configurable via `~/.config/ubuntu-state/config.yaml`:
+
+```yaml
+disk_warning_percent: 80
+disk_critical_percent: 90
+memory_warning_percent: 90
+battery_health_warning: 80
+battery_health_critical: 50
+uptime_warning_days: 30
+gpu_temp_warning: 80
+gpu_temp_critical: 90
+```
+
+Use the `--config` flag to specify a custom config path.
+
 ## Common Tasks
 
 ### Modify issue detection thresholds
 
-Edit `collectors/collector.go` in the `analyzeIssues()` function. Thresholds are hardcoded (e.g., 80% disk = warning, 90% = critical).
+Edit `~/.config/ubuntu-state/config.yaml` or use `--config /path/to/config.yaml`. Default values are defined in `config/config.go`.
 
 ### Change HTML styling
 
@@ -151,3 +179,7 @@ Add flags in `main.go` using the `flag` package, then handle them in the main fu
 - Some collectors gracefully fail on non-Ubuntu systems
 - Battery info only available on laptops with `/sys/class/power_supply/BAT*`
 - Firewall check requires `ufw` to be installed
+- Docker collector requires `docker` CLI
+- Snap collector requires `snap` CLI
+- GPU collector requires `nvidia-smi` (NVIDIA) or `rocm-smi` (AMD), falls back to `lspci`
+- Log collector requires `journalctl` for log analysis

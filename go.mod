@@ -8,6 +8,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/mark3labs/mcp-go v0.43.2
 	github.com/shirou/gopsutil/v3 v3.24.5
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -29,5 +30,4 @@ require (
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	golang.org/x/sys v0.25.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

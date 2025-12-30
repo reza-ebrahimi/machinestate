@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"ubuntu-state/config"
 	"ubuntu-state/models"
 )
 
@@ -20,6 +21,10 @@ func CollectAll() *models.Report {
 		Services:  CollectServiceInfo(),
 		Security:  CollectSecurityInfo(),
 		Hardware:  CollectHardwareInfo(),
+		Docker:    CollectDockerInfo(),
+		Snaps:     CollectSnapInfo(),
+		GPU:       CollectGPUInfo(),
+		Logs:      CollectLogInfo(),
 		Issues:    []models.Issue{},
 	}
 
@@ -33,9 +38,15 @@ func CollectAll() *models.Report {
 func analyzeIssues(report *models.Report) []models.Issue {
 	var issues []models.Issue
 
+	// Get config values (with safe defaults if config not initialized)
+	cfg := config.Current
+	if cfg == nil {
+		cfg = config.DefaultConfig()
+	}
+
 	// Check disk usage
 	for _, fs := range report.Disk.Filesystems {
-		if fs.UsedPercent >= 90 {
+		if fs.UsedPercent >= float64(cfg.DiskCriticalPercent) {
 			issues = append(issues, models.Issue{
 				Severity:    models.SeverityCritical,
 				Category:    "Disk",
@@ -43,7 +54,7 @@ func analyzeIssues(report *models.Report) []models.Issue {
 				Description: "Filesystem usage is at " + formatPercent(fs.UsedPercent),
 				Fix:         "Free up disk space or expand the partition",
 			})
-		} else if fs.UsedPercent >= 80 {
+		} else if fs.UsedPercent >= float64(cfg.DiskWarningPercent) {
 			issues = append(issues, models.Issue{
 				Severity:    models.SeverityWarning,
 				Category:    "Disk",
@@ -65,7 +76,7 @@ func analyzeIssues(report *models.Report) []models.Issue {
 	}
 
 	// Check memory
-	if report.System.MemoryPercent >= 90 {
+	if report.System.MemoryPercent >= float64(cfg.MemoryWarningPercent) {
 		issues = append(issues, models.Issue{
 			Severity:    models.SeverityWarning,
 			Category:    "Memory",
@@ -172,7 +183,7 @@ func analyzeIssues(report *models.Report) []models.Issue {
 	}
 
 	// Check battery health
-	if report.Hardware.Battery != nil && report.Hardware.Battery.Health < 50 {
+	if report.Hardware.Battery != nil && report.Hardware.Battery.Health < float64(cfg.BatteryHealthCritical) {
 		issues = append(issues, models.Issue{
 			Severity:    models.SeverityCritical,
 			Category:    "Hardware",
@@ -180,7 +191,7 @@ func analyzeIssues(report *models.Report) []models.Issue {
 			Description: "Battery health is at " + formatPercent(report.Hardware.Battery.Health),
 			Fix:         "Consider replacing the battery",
 		})
-	} else if report.Hardware.Battery != nil && report.Hardware.Battery.Health < 80 {
+	} else if report.Hardware.Battery != nil && report.Hardware.Battery.Health < float64(cfg.BatteryHealthWarning) {
 		issues = append(issues, models.Issue{
 			Severity:    models.SeverityWarning,
 			Category:    "Hardware",
@@ -238,6 +249,83 @@ func analyzeIssues(report *models.Report) []models.Issue {
 			Title:       "No internet connectivity",
 			Description: "Unable to reach external DNS servers",
 			Fix:         "Check network configuration and connection",
+		})
+	}
+
+	// Check if reboot is required
+	if report.System.RebootRequired {
+		issues = append(issues, models.Issue{
+			Severity:    models.SeverityWarning,
+			Category:    "System",
+			Title:       "Reboot required",
+			Description: "System updates require a reboot to take effect",
+			Fix:         "Schedule a system reboot when convenient",
+		})
+	}
+
+	// Check uptime
+	uptimeDays := int(report.System.Uptime.Hours() / 24)
+	if uptimeDays > cfg.UptimeWarningDays {
+		issues = append(issues, models.Issue{
+			Severity:    models.SeverityWarning,
+			Category:    "System",
+			Title:       "Long uptime",
+			Description: "System has been running for " + formatInt(uptimeDays) + " days without reboot",
+			Fix:         "Consider scheduling a reboot to apply kernel updates",
+		})
+	}
+
+	// Check Docker dangling images
+	if report.Docker.Available && report.Docker.DanglingImages > 1024*1024*1024 { // > 1GB
+		issues = append(issues, models.Issue{
+			Severity:    models.SeverityWarning,
+			Category:    "Docker",
+			Title:       "Large dangling images",
+			Description: "Dangling Docker images are using significant disk space",
+			Fix:         "Run: docker image prune to clean up",
+		})
+	}
+
+	// Check GPU temperature
+	for _, gpu := range report.GPU.GPUs {
+		if gpu.Temperature >= cfg.GPUTempCritical {
+			issues = append(issues, models.Issue{
+				Severity:    models.SeverityCritical,
+				Category:    "Hardware",
+				Title:       "GPU temperature critical: " + gpu.Name,
+				Description: "GPU temperature is at " + formatInt(gpu.Temperature) + "°C",
+				Fix:         "Check GPU cooling; reduce workload",
+			})
+		} else if gpu.Temperature >= cfg.GPUTempWarning {
+			issues = append(issues, models.Issue{
+				Severity:    models.SeverityWarning,
+				Category:    "Hardware",
+				Title:       "GPU temperature high: " + gpu.Name,
+				Description: "GPU temperature is at " + formatInt(gpu.Temperature) + "°C",
+				Fix:         "Monitor GPU temperature; ensure adequate cooling",
+			})
+		}
+	}
+
+	// Check for OOM events
+	if report.Logs.Stats.OOMEvents > 0 {
+		issues = append(issues, models.Issue{
+			Severity:    models.SeverityWarning,
+			Category:    "Memory",
+			Title:       "OOM events detected",
+			Description: formatInt(report.Logs.Stats.OOMEvents) + " out-of-memory event(s) in the last 24 hours",
+			Fix:         "Review memory usage; consider adding RAM or reducing memory-intensive applications",
+		})
+	}
+
+	// Check for kernel panics
+	if report.Logs.Stats.KernelPanics > 0 {
+		issues = append(issues, models.Issue{
+			Severity:    models.SeverityCritical,
+			Category:    "System",
+			Title:       "Kernel panics detected",
+			Description: formatInt(report.Logs.Stats.KernelPanics) + " kernel panic(s) in the last 24 hours",
+			Fix:         "Review system logs; check hardware and drivers",
 		})
 	}
 

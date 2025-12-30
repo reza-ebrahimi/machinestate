@@ -3,6 +3,7 @@ package collectors
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 	"time"
@@ -53,6 +54,14 @@ func CollectSystemInfo() models.SystemInfo {
 	if uptime, err := host.Uptime(); err == nil {
 		info.Uptime = time.Duration(uptime) * time.Second
 		info.UptimeHuman = formatDuration(info.Uptime)
+	}
+
+	// Timezone
+	info.Timezone = getTimezone()
+
+	// Reboot required check
+	if _, err := os.Stat("/var/run/reboot-required"); err == nil {
+		info.RebootRequired = true
 	}
 
 	// Load average
@@ -111,4 +120,27 @@ func GetHostname() string {
 		return "unknown"
 	}
 	return hostname
+}
+
+// getTimezone returns the system timezone
+func getTimezone() string {
+	// Try reading from /etc/timezone first (Debian/Ubuntu)
+	if data, err := os.ReadFile("/etc/timezone"); err == nil {
+		tz := strings.TrimSpace(string(data))
+		if tz != "" {
+			return tz
+		}
+	}
+
+	// Fallback to timedatectl
+	cmd := exec.Command("timedatectl", "show", "-p", "Timezone", "--value")
+	if output, err := cmd.Output(); err == nil {
+		tz := strings.TrimSpace(string(output))
+		if tz != "" {
+			return tz
+		}
+	}
+
+	// Final fallback: use Go's local timezone
+	return time.Now().Location().String()
 }

@@ -263,7 +263,158 @@ func Compare(old, new *models.Report) *Comparison {
 		}
 	}
 
+	// Compare kernel version
+	if old.OS.Kernel != new.OS.Kernel {
+		comp.Changes = append(comp.Changes, Change{
+			Category: "System",
+			Item:     "Kernel",
+			Old:      old.OS.Kernel,
+			New:      new.OS.Kernel,
+			Delta:    "UPDATED",
+		})
+	}
+
+	// Compare Docker containers
+	if old.Docker.Available && new.Docker.Available {
+		runningDiff := new.Docker.RunningCount - old.Docker.RunningCount
+		if runningDiff != 0 {
+			comp.Changes = append(comp.Changes, Change{
+				Category: "Docker",
+				Item:     "Running Containers",
+				Old:      fmt.Sprintf("%d", old.Docker.RunningCount),
+				New:      fmt.Sprintf("%d", new.Docker.RunningCount),
+				Delta:    fmt.Sprintf("%+d", runningDiff),
+			})
+		}
+
+		stoppedDiff := new.Docker.StoppedCount - old.Docker.StoppedCount
+		if stoppedDiff != 0 {
+			comp.Changes = append(comp.Changes, Change{
+				Category: "Docker",
+				Item:     "Stopped Containers",
+				Old:      fmt.Sprintf("%d", old.Docker.StoppedCount),
+				New:      fmt.Sprintf("%d", new.Docker.StoppedCount),
+				Delta:    fmt.Sprintf("%+d", stoppedDiff),
+			})
+		}
+	}
+
+	// Compare Snaps
+	if old.Snaps.Available && new.Snaps.Available {
+		snapCountDiff := len(new.Snaps.Snaps) - len(old.Snaps.Snaps)
+		if snapCountDiff != 0 {
+			comp.Changes = append(comp.Changes, Change{
+				Category: "Snaps",
+				Item:     "Installed Count",
+				Old:      fmt.Sprintf("%d", len(old.Snaps.Snaps)),
+				New:      fmt.Sprintf("%d", len(new.Snaps.Snaps)),
+				Delta:    fmt.Sprintf("%+d", snapCountDiff),
+			})
+		}
+
+		// Check disk usage change > 100MB
+		diskDiff := new.Snaps.TotalDiskUsage - old.Snaps.TotalDiskUsage
+		if diskDiff > 100*1024*1024 || diskDiff < -100*1024*1024 {
+			comp.Changes = append(comp.Changes, Change{
+				Category: "Snaps",
+				Item:     "Disk Usage",
+				Old:      formatBytesForCompare(old.Snaps.TotalDiskUsage),
+				New:      formatBytesForCompare(new.Snaps.TotalDiskUsage),
+				Delta:    formatBytesDelta(diskDiff),
+			})
+		}
+	}
+
+	// Compare GPU temperatures
+	if old.GPU.Available && new.GPU.Available {
+		for i, newGPU := range new.GPU.GPUs {
+			if i < len(old.GPU.GPUs) {
+				oldGPU := old.GPU.GPUs[i]
+				tempDiff := newGPU.Temperature - oldGPU.Temperature
+				if tempDiff > 5 || tempDiff < -5 {
+					comp.Changes = append(comp.Changes, Change{
+						Category: "GPU",
+						Item:     newGPU.Name + " Temp",
+						Old:      fmt.Sprintf("%d°C", oldGPU.Temperature),
+						New:      fmt.Sprintf("%d°C", newGPU.Temperature),
+						Delta:    fmt.Sprintf("%+d°C", tempDiff),
+					})
+				}
+			}
+		}
+	}
+
+	// Compare Logs
+	if old.Logs.Available && new.Logs.Available {
+		errorDiff := new.Logs.Stats.ErrorCount - old.Logs.Stats.ErrorCount
+		if errorDiff != 0 {
+			comp.Changes = append(comp.Changes, Change{
+				Category: "Logs",
+				Item:     "Errors (24h)",
+				Old:      fmt.Sprintf("%d", old.Logs.Stats.ErrorCount),
+				New:      fmt.Sprintf("%d", new.Logs.Stats.ErrorCount),
+				Delta:    fmt.Sprintf("%+d", errorDiff),
+			})
+		}
+
+		oomDiff := new.Logs.Stats.OOMEvents - old.Logs.Stats.OOMEvents
+		if oomDiff != 0 {
+			comp.Changes = append(comp.Changes, Change{
+				Category: "Logs",
+				Item:     "OOM Events",
+				Old:      fmt.Sprintf("%d", old.Logs.Stats.OOMEvents),
+				New:      fmt.Sprintf("%d", new.Logs.Stats.OOMEvents),
+				Delta:    fmt.Sprintf("%+d", oomDiff),
+			})
+		}
+
+		panicDiff := new.Logs.Stats.KernelPanics - old.Logs.Stats.KernelPanics
+		if panicDiff != 0 {
+			comp.Changes = append(comp.Changes, Change{
+				Category: "Logs",
+				Item:     "Kernel Panics",
+				Old:      fmt.Sprintf("%d", old.Logs.Stats.KernelPanics),
+				New:      fmt.Sprintf("%d", new.Logs.Stats.KernelPanics),
+				Delta:    fmt.Sprintf("%+d", panicDiff),
+			})
+		}
+	}
+
 	return comp
+}
+
+func formatBytesForCompare(b int64) string {
+	const unit = 1024
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
+}
+
+func formatBytesDelta(b int64) string {
+	sign := "+"
+	if b < 0 {
+		sign = ""
+	}
+	const unit = 1024
+	absB := b
+	if absB < 0 {
+		absB = -absB
+	}
+	if absB < unit {
+		return fmt.Sprintf("%s%d B", sign, b)
+	}
+	div, exp := int64(unit), 0
+	for n := absB / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%s%.1f %cB", sign, float64(b)/float64(div), "KMGTPE"[exp])
 }
 
 func countIssuesBySeverity(issues []models.Issue) (critical, warning, info int) {

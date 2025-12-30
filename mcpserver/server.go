@@ -46,6 +46,10 @@ func registerTools(s *server.MCPServer) {
 	registerGetServiceInfo(s)
 	registerGetSecurityInfo(s)
 	registerGetHardwareInfo(s)
+	registerGetDockerInfo(s)
+	registerGetSnapInfo(s)
+	registerGetGPUInfo(s)
+	registerGetLogInfo(s)
 
 	// History tools
 	registerListReports(s)
@@ -250,6 +254,70 @@ func registerGetHardwareInfo(s *server.MCPServer) {
 		hardwareInfo := collectors.CollectHardwareInfo()
 
 		jsonData, err := toJSON(hardwareInfo)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to serialize: %v", err)), nil
+		}
+		return mcp.NewToolResultText(jsonData), nil
+	})
+}
+
+func registerGetDockerInfo(s *server.MCPServer) {
+	tool := mcp.NewTool("get_docker_info",
+		mcp.WithDescription("Get Docker container and image information including running/stopped containers, images, and disk usage."),
+	)
+
+	s.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		dockerInfo := collectors.CollectDockerInfo()
+
+		jsonData, err := toJSON(dockerInfo)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to serialize: %v", err)), nil
+		}
+		return mcp.NewToolResultText(jsonData), nil
+	})
+}
+
+func registerGetSnapInfo(s *server.MCPServer) {
+	tool := mcp.NewTool("get_snap_info",
+		mcp.WithDescription("Get Snap package information including installed snaps, disk usage, and pending refreshes."),
+	)
+
+	s.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		snapInfo := collectors.CollectSnapInfo()
+
+		jsonData, err := toJSON(snapInfo)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to serialize: %v", err)), nil
+		}
+		return mcp.NewToolResultText(jsonData), nil
+	})
+}
+
+func registerGetGPUInfo(s *server.MCPServer) {
+	tool := mcp.NewTool("get_gpu_info",
+		mcp.WithDescription("Get GPU information including temperature, utilization, and memory usage for NVIDIA, AMD, or Intel GPUs."),
+	)
+
+	s.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		gpuInfo := collectors.CollectGPUInfo()
+
+		jsonData, err := toJSON(gpuInfo)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to serialize: %v", err)), nil
+		}
+		return mcp.NewToolResultText(jsonData), nil
+	})
+}
+
+func registerGetLogInfo(s *server.MCPServer) {
+	tool := mcp.NewTool("get_log_info",
+		mcp.WithDescription("Get log analysis for the last 24 hours including error counts, OOM events, kernel panics, and top error patterns."),
+	)
+
+	s.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		logInfo := collectors.CollectLogInfo()
+
+		jsonData, err := toJSON(logInfo)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Failed to serialize: %v", err)), nil
 		}

@@ -9,19 +9,22 @@ import (
 	"github.com/fatih/color"
 
 	"ubuntu-state/collectors"
+	"ubuntu-state/config"
 	"ubuntu-state/history"
 	"ubuntu-state/mcpserver"
 	"ubuntu-state/outputs"
 )
 
 var (
-	formatFlag  = flag.String("format", "terminal", "Output format: terminal, html, json, markdown, all")
-	outputFlag  = flag.String("output", "", "Output file path (default: stdout for terminal/json/markdown, report.html for html)")
-	compareFlag = flag.Bool("compare", false, "Compare with the last saved report")
-	noSaveFlag  = flag.Bool("no-save", false, "Don't save this report to history")
-	quietFlag   = flag.Bool("quiet", false, "Suppress terminal output when using --format all")
-	versionFlag = flag.Bool("version", false, "Show version")
-	mcpFlag     = flag.Bool("mcp", false, "Run as MCP server (stdio transport for Claude Code integration)")
+	formatFlag      = flag.String("format", "terminal", "Output format: terminal, html, json, markdown, all")
+	outputFlag      = flag.String("output", "", "Output file path (default: stdout for terminal/json/markdown, report.html for html)")
+	compareFlag     = flag.Bool("compare", false, "Compare with the last saved report")
+	noSaveFlag      = flag.Bool("no-save", false, "Don't save this report to history")
+	quietFlag       = flag.Bool("quiet", false, "Suppress terminal output when using --format all")
+	jsonCompactFlag = flag.Bool("json-compact", false, "Output minified JSON (single line)")
+	configFlag      = flag.String("config", "", "Path to config file (default: ~/.config/ubuntu-state/config.yaml)")
+	versionFlag     = flag.Bool("version", false, "Show version")
+	mcpFlag         = flag.Bool("mcp", false, "Run as MCP server (stdio transport for Claude Code integration)")
 )
 
 const version = "1.0.0"
@@ -53,6 +56,9 @@ func main() {
 		fmt.Printf("ubuntu-state version %s\n", version)
 		os.Exit(0)
 	}
+
+	// Initialize configuration
+	config.Init(*configFlag)
 
 	// Run as MCP server if --mcp flag is set
 	if *mcpFlag {
@@ -105,7 +111,13 @@ func main() {
 		fmt.Print(outputs.RenderTerminal(report))
 
 	case "json":
-		output, err := outputs.RenderJSON(report)
+		var output string
+		var err error
+		if *jsonCompactFlag {
+			output, err = outputs.RenderJSONCompact(report)
+		} else {
+			output, err = outputs.RenderJSON(report)
+		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error generating JSON: %v\n", err)
 			os.Exit(1)

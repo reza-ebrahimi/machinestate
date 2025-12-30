@@ -17,7 +17,14 @@ func RenderMarkdown(report *models.Report) string {
 	sb.WriteString(fmt.Sprintf("**Hostname:** %s  \n", report.Hostname))
 	sb.WriteString(fmt.Sprintf("**OS:** %s  \n", report.OS.Name))
 	sb.WriteString(fmt.Sprintf("**Kernel:** %s  \n", report.OS.Kernel))
-	sb.WriteString(fmt.Sprintf("**Uptime:** %s  \n\n", report.System.UptimeHuman))
+	sb.WriteString(fmt.Sprintf("**Uptime:** %s  \n", report.System.UptimeHuman))
+	if report.System.Timezone != "" {
+		sb.WriteString(fmt.Sprintf("**Timezone:** %s  \n", report.System.Timezone))
+	}
+	if report.System.RebootRequired {
+		sb.WriteString("**⚠️ Reboot Required**  \n")
+	}
+	sb.WriteString("\n")
 
 	// Issues Summary
 	sb.WriteString("## Issues Summary\n\n")
@@ -140,6 +147,96 @@ func RenderMarkdown(report *models.Report) string {
 
 	if len(report.Hardware.CrashReports) > 0 {
 		sb.WriteString(fmt.Sprintf("### Crash Reports\n\n%d crash report(s) in /var/crash\n\n", len(report.Hardware.CrashReports)))
+	}
+
+	// Docker
+	if report.Docker.Available {
+		sb.WriteString("## Docker\n\n")
+		if !report.Docker.DaemonRunning {
+			sb.WriteString("Docker daemon is not running.\n\n")
+		} else {
+			sb.WriteString(fmt.Sprintf("- **Running Containers:** %d\n", report.Docker.RunningCount))
+			sb.WriteString(fmt.Sprintf("- **Stopped Containers:** %d\n", report.Docker.StoppedCount))
+			sb.WriteString(fmt.Sprintf("- **Images:** %d (%s)\n", report.Docker.ImageCount, formatBytes(uint64(report.Docker.TotalImageSize))))
+			if report.Docker.DanglingImages > 0 {
+				sb.WriteString(fmt.Sprintf("- **Dangling Images:** %s\n", formatBytes(uint64(report.Docker.DanglingImages))))
+			}
+			sb.WriteString("\n")
+
+			if len(report.Docker.Containers) > 0 {
+				sb.WriteString("### Running Containers\n\n")
+				sb.WriteString("| Name | Image | Status | CPU | Memory |\n")
+				sb.WriteString("|------|-------|--------|-----|--------|\n")
+				for _, c := range report.Docker.Containers {
+					if c.State == "running" {
+						sb.WriteString(fmt.Sprintf("| %s | %s | %s | %.1f%% | %.1f%% |\n",
+							c.Name, c.Image, c.Status, c.CPUPercent, c.MemoryPercent))
+					}
+				}
+				sb.WriteString("\n")
+			}
+		}
+	}
+
+	// Snaps
+	if report.Snaps.Available && len(report.Snaps.Snaps) > 0 {
+		sb.WriteString("## Snaps\n\n")
+		sb.WriteString(fmt.Sprintf("- **Installed Snaps:** %d\n", len(report.Snaps.Snaps)))
+		sb.WriteString(fmt.Sprintf("- **Total Disk Usage:** %s\n", formatBytes(uint64(report.Snaps.TotalDiskUsage))))
+		if report.Snaps.PendingRefreshes > 0 {
+			sb.WriteString(fmt.Sprintf("- **Pending Refreshes:** %d\n", report.Snaps.PendingRefreshes))
+		}
+		sb.WriteString("\n")
+	}
+
+	// GPU
+	if report.GPU.Available && len(report.GPU.GPUs) > 0 {
+		sb.WriteString("## GPU\n\n")
+		for _, gpu := range report.GPU.GPUs {
+			sb.WriteString(fmt.Sprintf("### %s (%s)\n\n", gpu.Name, gpu.Vendor))
+			if gpu.Temperature > 0 {
+				sb.WriteString(fmt.Sprintf("- **Temperature:** %d°C\n", gpu.Temperature))
+			}
+			if gpu.Utilization > 0 {
+				sb.WriteString(fmt.Sprintf("- **Utilization:** %d%%\n", gpu.Utilization))
+			}
+			if gpu.MemoryTotal > 0 {
+				sb.WriteString(fmt.Sprintf("- **Memory:** %s / %s\n",
+					formatBytes(uint64(gpu.MemoryUsed)), formatBytes(uint64(gpu.MemoryTotal))))
+			}
+			if gpu.PowerDraw > 0 {
+				sb.WriteString(fmt.Sprintf("- **Power Draw:** %.1fW\n", gpu.PowerDraw))
+			}
+			sb.WriteString("\n")
+		}
+	}
+
+	// Logs
+	if report.Logs.Available {
+		sb.WriteString("## Logs (24h)\n\n")
+		sb.WriteString(fmt.Sprintf("- **Critical:** %d\n", report.Logs.Stats.CriticalCount))
+		sb.WriteString(fmt.Sprintf("- **Errors:** %d\n", report.Logs.Stats.ErrorCount))
+		sb.WriteString(fmt.Sprintf("- **Warnings:** %d\n", report.Logs.Stats.WarningCount))
+		if report.Logs.Stats.OOMEvents > 0 {
+			sb.WriteString(fmt.Sprintf("- **OOM Events:** %d\n", report.Logs.Stats.OOMEvents))
+		}
+		if report.Logs.Stats.KernelPanics > 0 {
+			sb.WriteString(fmt.Sprintf("- **Kernel Panics:** %d\n", report.Logs.Stats.KernelPanics))
+		}
+		if report.Logs.Stats.Segfaults > 0 {
+			sb.WriteString(fmt.Sprintf("- **Segfaults:** %d\n", report.Logs.Stats.Segfaults))
+		}
+		sb.WriteString("\n")
+
+		if len(report.Logs.Stats.TopErrors) > 0 {
+			sb.WriteString("### Top Error Patterns\n\n")
+			sb.WriteString("| Count | Pattern |\n")
+			sb.WriteString("|-------|--------|\n")
+			for _, e := range report.Logs.Stats.TopErrors {
+				sb.WriteString(fmt.Sprintf("| %d | %s |\n", e.Count, e.Pattern))
+			}
+			sb.WriteString("\n")
+		}
 	}
 
 	// Detailed Issues
