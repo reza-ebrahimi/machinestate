@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SecurityInfo",
+  "type": "object",
+  "required": ["firewall_active", "firewall_status", "failed_logins_24h", "open_ports", "ssh_enabled"],
+  "properties": {
+    "firewall_active": { "type": "boolean" },
+    "firewall_status": { "type": "string" },
+    "failed_logins_24h": { "type": "integer", "minimum": 0 },
+    "open_ports": { "type": "array", "items": { "type": "string" } },
+    "ssh_enabled": { "type": "boolean" }
+  }
+}

@@ -1,0 +1,44 @@
+Source: machinestate
+Section: admin
+Priority: optional
+Maintainer: Reza Ebrahimi <reza.ebrahimi.dev@gmail.com>
+Build-Depends: debhelper (>= 13), golang-go (>= 1.21) | golang-1.21-go
+Standards-Version: 4.6.0
+Homepage: https://github.com/reza-ebrahimi/machinestate
+
+Package: machinestate-go
+Architecture: amd64 arm64
+Depends: ${shlibs:Depends}, ${misc:Depends}, systemd
+Description: System state reporter for Linux (Go version)
+ Fast, single-binary system health reporter with comprehensive
+ analysis, multiple output formats, and MCP server integration.
+ .
+ Features:
+  - Collects CPU, memory, disk, network, packages, services,
+    security, hardware, Docker, Snap, GPU, and log information
+  - Detects system issues with severity levels
+  - Multiple output formats: terminal, JSON, HTML, Markdown
+  - Continuous streaming mode with JSONL output
+  - HTTP server mode with REST API and Prometheus metrics
+  - MCP server integration for Claude Code
+ .
+ This package contains the Go implementation.
+
+Package: machinestate-zig
+Architecture: amd64 arm64
+Depends: ${shlibs:Depends}, ${misc:Depends}, systemd
+Conflicts: machinestate-go
+Description: System state reporter for Linux (Zig version)
+ Fast, single-binary system health reporter with comprehensive
+ analysis, multiple output formats, and MCP server integration.
+ .
+ Features:
+  - Collects CPU, memory, disk, network, packages, services,
+    security, hardware, Docker, Snap, GPU, and log information
+  - Detects system issues with severity levels
+  - Multiple output formats: terminal, JSON, HTML, Markdown
+  - Continuous streaming mode with JSONL output
+  - HTTP server mode with REST API and Prometheus metrics
+  - MCP server integration for Claude Code
+ .
+ This package contains the Zig implementation (smaller binary).

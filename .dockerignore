@@ -1,0 +1,31 @@
+# Build artifacts
+go/machinestate
+go/machinestate-*
+zig/zig-out/
+zig/.zig-cache/
+dist/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation (not needed in image)
+*.md
+docs/
+
+# Debian packaging
+debian/
+*.deb
+
+# Scripts
+scripts/
+
+# Schema (not needed at runtime)
+schema/
+
+# Plan files
+.claude/

@@ -1,0 +1,11 @@
+.{
+    .name = .machinestate,
+    .version = "1.0.0",
+    .fingerprint = 0xa8bc4999aa3e9941,
+    .minimum_zig_version = "0.14.0",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}

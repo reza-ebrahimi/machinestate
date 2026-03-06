@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LogInfo",
+  "type": "object",
+  "required": ["available", "period", "stats"],
+  "properties": {
+    "available": { "type": "boolean" },
+    "period": { "type": "string" },
+    "stats": {
+      "type": "object",
+      "required": ["error_count", "warning_count", "critical_count", "oom_events", "kernel_panics", "segfaults"],
+      "properties": {
+        "error_count": { "type": "integer", "minimum": 0 },
+        "warning_count": { "type": "integer", "minimum": 0 },
+        "critical_count": { "type": "integer", "minimum": 0 },
+        "oom_events": { "type": "integer", "minimum": 0 },
+        "kernel_panics": { "type": "integer", "minimum": 0 },
+        "segfaults": { "type": "integer", "minimum": 0 },
+        "top_errors": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["pattern", "count"],
+                "properties": {
+                  "pattern": { "type": "string" },
+                  "count": { "type": "integer", "minimum": 1 }
+                }
+              }
+            },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Issues",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["severity", "category", "title", "description"],
+    "properties": {
+      "severity": { "type": "string", "enum": ["critical", "warning", "info"] },
+      "category": { "type": "string" },
+      "title": { "type": "string" },
+      "description": { "type": "string" },
+      "fix": { "type": "string" }
+    }
+  }
+}

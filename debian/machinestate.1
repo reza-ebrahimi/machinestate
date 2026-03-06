@@ -1,0 +1,224 @@
+.TH MACHINESTATE 1 "December 2025" "machinestate 1.0.0" "User Commands"
+.SH NAME
+machinestate \- system state reporter for Linux
+.SH SYNOPSIS
+.B machinestate
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+.B machinestate
+is a fast, single-binary system health reporter that collects comprehensive
+system metrics, detects issues, and outputs reports in multiple formats.
+.PP
+It monitors CPU, memory, disk, network, packages, services, security,
+hardware, Docker containers, Snap packages, GPUs, and system logs.
+Issues are automatically detected with severity levels and fix recommendations.
+.SH OPTIONS
+.TP
+.BR \-\-format =\fIFORMAT\fR
+Output format: terminal (default), html, json, markdown, all
+.TP
+.BR \-\-output =\fIPATH\fR
+Output file path (default: stdout)
+.TP
+.BR \-\-stream
+Enable continuous streaming mode (JSONL output)
+.TP
+.BR \-\-interval =\fISECONDS\fR
+Interval between streaming cycles in seconds (default: 5)
+.TP
+.BR \-\-duration =\fISECONDS\fR
+Maximum streaming duration in seconds (0 = infinite)
+.TP
+.BR \-\-count =\fIN\fR
+Number of streaming cycles (0 = infinite)
+.TP
+.BR \-\-collectors =\fILIST\fR
+Comma-separated collectors to stream (default: all)
+.TP
+.BR \-\-http =\fIPORT\fR
+Run HTTP server on specified port (e.g., 8080)
+.TP
+.BR \-\-mcp
+Run as MCP server (stdio transport for Claude Code integration)
+.TP
+.BR \-\-config =\fIPATH\fR
+Path to YAML config file (default: ~/.config/machinestate/config.yaml)
+.TP
+.BR \-\-quiet
+Suppress terminal output when using \-\-format all
+.TP
+.BR \-\-json\-compact
+Output minified JSON (single line)
+.TP
+.BR \-\-version
+Show version and exit
+.SH COLLECTORS
+The following collectors gather system information:
+.TP
+.B os
+Operating system name, version, kernel, architecture
+.TP
+.B system
+CPU usage, memory, swap, load average, uptime, timezone
+.TP
+.B disk
+Filesystem usage, free space, inode status
+.TP
+.B network
+Network interfaces, IP addresses, listening ports, connectivity
+.TP
+.B packages
+APT updates, security updates, broken and held packages
+.TP
+.B services
+Systemd failed units, zombie processes, top CPU/memory processes
+.TP
+.B security
+Firewall status (UFW), SSH status, failed login attempts (24h)
+.TP
+.B hardware
+Battery health and capacity, temperature sensors, crash reports
+.TP
+.B docker
+Docker containers (running/stopped), images, disk usage
+.TP
+.B snaps
+Snap packages, disk usage, pending refreshes
+.TP
+.B gpu
+GPU temperature, utilization, memory (NVIDIA, AMD, Intel)
+.TP
+.B logs
+Log analysis: errors, warnings, OOM events, kernel panics (24h)
+.SH HTTP ENDPOINTS
+When running with \fB\-\-http\fR, the following REST API endpoints are available:
+.TP
+.B /health
+Health check endpoint (returns {"status":"ok"})
+.TP
+.B /api/report
+Full system report as JSON
+.TP
+.B /api/issues
+Detected issues (optional query: ?severity=critical|warning|info)
+.TP
+.B /api/system
+CPU, memory, load average, uptime
+.TP
+.B /api/disk
+Filesystem usage (optional query: ?mount=/)
+.TP
+.B /api/network
+Network interfaces and listening ports
+.TP
+.B /api/packages
+APT package status
+.TP
+.B /api/services
+Systemd services and top processes
+.TP
+.B /api/security
+Firewall and SSH status
+.TP
+.B /api/hardware
+Battery and temperature information
+.TP
+.B /api/docker
+Docker containers and images
+.TP
+.B /api/snaps
+Snap packages
+.TP
+.B /api/gpu
+GPU information
+.TP
+.B /api/logs
+Log analysis
+.TP
+.B /api/config
+Current configuration thresholds
+.TP
+.B /metrics
+Prometheus format metrics
+.SH CONFIGURATION
+Configuration thresholds can be set in a YAML file:
+.PP
+.RS
+.nf
+# ~/.config/machinestate/config.yaml
+disk_warning_percent: 80
+disk_critical_percent: 90
+memory_warning_percent: 90
+battery_health_warning: 80
+battery_health_critical: 50
+uptime_warning_days: 30
+gpu_temp_warning: 80
+gpu_temp_critical: 90
+.fi
+.RE
+.SH FILES
+.TP
+.I ~/.config/machinestate/config.yaml
+User configuration file
+.TP
+.I /etc/machinestate/config.yaml
+System-wide configuration file
+.SH EXAMPLES
+.TP
+Generate terminal report:
+.B machinestate
+.TP
+Generate JSON report:
+.B machinestate \-\-format json
+.TP
+Generate HTML report and save to file:
+.B machinestate \-\-format html \-\-output report.html
+.TP
+Stream system data every 10 seconds:
+.B machinestate \-\-stream \-\-interval 10
+.TP
+Stream specific collectors for 1 hour:
+.B machinestate \-\-stream \-\-collectors system,disk \-\-duration 3600
+.TP
+Start HTTP server on port 8080:
+.B machinestate \-\-http 8080
+.TP
+Run as MCP server for Claude Code:
+.B machinestate \-\-mcp
+.TP
+Use custom config file:
+.B machinestate \-\-config /path/to/config.yaml
+.SH STREAMING OUTPUT
+When using \fB\-\-stream\fR, output is JSONL (JSON Lines) with cycle markers:
+.PP
+.RS
+.nf
+{"_cycle":1,"_timestamp":"2025-12-30T10:00:00Z"}
+{"collector":"system","timestamp":"...","data":{...}}
+{"collector":"disk","timestamp":"...","data":{...}}
+{"_cycle_complete":1}
+{"_cycle":2,"_timestamp":"2025-12-30T10:00:05Z"}
+...
+{"_shutdown":true,"_total_cycles":10,"_timestamp":"..."}
+.fi
+.RE
+.PP
+Press Ctrl+C for graceful shutdown with shutdown marker.
+.SH EXIT STATUS
+.TP
+.B 0
+Success
+.TP
+.B 1
+Error (invalid arguments, file write failure, server error)
+.SH SEE ALSO
+.BR systemctl (1),
+.BR journalctl (1),
+.BR docker (1),
+.BR snap (1),
+.BR ufw (8),
+.BR ss (8)
+.SH BUGS
+Report bugs at https://github.com/reza-ebrahimi/machinestate/issues
+.SH AUTHOR
+machinestate was written by Reza Ebrahimi for comprehensive system health monitoring.

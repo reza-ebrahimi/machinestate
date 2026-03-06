@@ -1,0 +1,11 @@
+machinestate (1.0.0) unstable; urgency=medium
+
+  * Initial release
+  * System health reporting with comprehensive collectors
+  * Multiple output formats: terminal, JSON, HTML, Markdown
+  * Continuous streaming mode with JSONL output
+  * HTTP server mode with REST API and Prometheus metrics
+  * MCP server integration for Claude Code
+  * Available in both Go and Zig implementations
+
+ -- Reza Ebrahimi <reza.ebrahimi.dev@gmail.com>  Mon, 30 Dec 2025 12:00:00 +0000

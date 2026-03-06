@@ -1,0 +1,6 @@
+# Default configuration for machinestate service
+# Port for HTTP server
+MACHINESTATE_PORT=8080
+
+# Optional: Path to config file
+# MACHINESTATE_CONFIG=/etc/machinestate/config.yaml

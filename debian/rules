@@ -1,0 +1,44 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1
+
+# Architecture mapping
+DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+
+ifeq ($(DEB_HOST_ARCH),amd64)
+    GOARCH = amd64
+    ZIG_TARGET = x86_64-linux-gnu
+else ifeq ($(DEB_HOST_ARCH),arm64)
+    GOARCH = arm64
+    ZIG_TARGET = aarch64-linux-gnu
+else
+    GOARCH = $(DEB_HOST_ARCH)
+    ZIG_TARGET = native
+endif
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cd go && CGO_ENABLED=0 GOOS=linux GOARCH=$(GOARCH) go build -o machinestate .
+	cd zig && zig build -Doptimize=ReleaseFast -Dtarget=$(ZIG_TARGET)
+
+override_dh_auto_install:
+	# Install Go version
+	install -D -m 755 go/machinestate debian/machinestate-go/usr/bin/machinestate
+	install -D -m 644 debian/machinestate.1 debian/machinestate-go/usr/share/man/man1/machinestate.1
+	install -D -m 644 debian/machinestate.service debian/machinestate-go/lib/systemd/system/machinestate.service
+	install -D -m 644 debian/machinestate.default debian/machinestate-go/etc/default/machinestate
+	# Install Zig version
+	install -D -m 755 zig/zig-out/bin/machinestate debian/machinestate-zig/usr/bin/machinestate
+	install -D -m 644 debian/machinestate.1 debian/machinestate-zig/usr/share/man/man1/machinestate.1
+	install -D -m 644 debian/machinestate.service debian/machinestate-zig/lib/systemd/system/machinestate.service
+	install -D -m 644 debian/machinestate.default debian/machinestate-zig/etc/default/machinestate
+
+override_dh_auto_test:
+	# Skip tests during package build (they require system access)
+	true
+
+override_dh_auto_clean:
+	rm -f go/machinestate go/machinestate-*
+	rm -rf zig/zig-out zig/.zig-cache

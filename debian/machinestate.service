@@ -1,0 +1,23 @@
+[Unit]
+Description=MachineState System Reporter
+Documentation=man:machinestate(1)
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/default/machinestate
+ExecStart=/usr/bin/machinestate --http ${MACHINESTATE_PORT}
+Restart=on-failure
+RestartSec=5
+User=root
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

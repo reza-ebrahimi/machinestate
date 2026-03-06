@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Go implementation (default)
+  machinestate-go:
+    build:
+      context: .
+      dockerfile: Dockerfile.go
+    image: machinestate:go
+    container_name: machinestate-go
+    ports:
+      - "8080:8080"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    environment:
+      - MACHINESTATE_PORT=8080
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  # Zig implementation
+  machinestate-zig:
+    build:
+      context: .
+      dockerfile: Dockerfile.zig
+    image: machinestate:zig
+    container_name: machinestate-zig
+    ports:
+      - "8081:8080"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    environment:
+      - MACHINESTATE_PORT=8080
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3

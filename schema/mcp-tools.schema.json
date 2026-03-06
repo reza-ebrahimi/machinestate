@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/reza-ebrahimi/machinestate/mcp-tools.schema.json",
+  "title": "MachineState MCP Tool Schemas",
+  "description": "JSON Schemas for MCP tool responses",
+
+  "$defs": {
+    "SystemInfo": {
+      "$ref": "report.schema.json#/$defs/SystemInfo"
+    },
+    "DiskInfo": {
+      "$ref": "report.schema.json#/$defs/DiskInfo"
+    },
+    "NetworkInfo": {
+      "$ref": "report.schema.json#/$defs/NetworkInfo"
+    },
+    "PackageInfo": {
+      "$ref": "report.schema.json#/$defs/PackageInfo"
+    },
+    "ServiceInfo": {
+      "$ref": "report.schema.json#/$defs/ServiceInfo"
+    },
+    "SecurityInfo": {
+      "$ref": "report.schema.json#/$defs/SecurityInfo"
+    },
+    "HardwareInfo": {
+      "$ref": "report.schema.json#/$defs/HardwareInfo"
+    },
+    "DockerInfo": {
+      "$ref": "report.schema.json#/$defs/DockerInfo"
+    },
+    "SnapInfo": {
+      "$ref": "report.schema.json#/$defs/SnapInfo"
+    },
+    "GPUInfo": {
+      "$ref": "report.schema.json#/$defs/GPUInfo"
+    },
+    "LogInfo": {
+      "$ref": "report.schema.json#/$defs/LogInfo"
+    },
+    "Issue": {
+      "$ref": "report.schema.json#/$defs/Issue"
+    },
+    "IssuesArray": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Issue" }
+    }
+  },
+
+  "tools": {
+    "get_system_report": { "$ref": "report.schema.json" },
+    "get_issues": { "$ref": "#/$defs/IssuesArray" },
+    "get_system_info": { "$ref": "#/$defs/SystemInfo" },
+    "get_disk_info": { "$ref": "#/$defs/DiskInfo" },
+    "get_network_info": { "$ref": "#/$defs/NetworkInfo" },
+    "get_package_info": { "$ref": "#/$defs/PackageInfo" },
+    "get_service_info": { "$ref": "#/$defs/ServiceInfo" },
+    "get_security_info": { "$ref": "#/$defs/SecurityInfo" },
+    "get_hardware_info": { "$ref": "#/$defs/HardwareInfo" },
+    "get_docker_info": { "$ref": "#/$defs/DockerInfo" },
+    "get_snap_info": { "$ref": "#/$defs/SnapInfo" },
+    "get_gpu_info": { "$ref": "#/$defs/GPUInfo" },
+    "get_log_info": { "$ref": "#/$defs/LogInfo" }
+  }
+}

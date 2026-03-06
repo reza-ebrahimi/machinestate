@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SystemInfo",
+  "type": "object",
+  "required": ["uptime", "uptime_human", "timezone", "reboot_required", "load_avg_1", "load_avg_5", "load_avg_15", "cpu_cores", "cpu_usage", "memory_total", "memory_used", "memory_free", "memory_percent", "swap_total", "swap_used", "swap_percent"],
+  "properties": {
+    "uptime": { "type": "integer", "minimum": 0 },
+    "uptime_human": { "type": "string" },
+    "timezone": { "type": "string" },
+    "reboot_required": { "type": "boolean" },
+    "load_avg_1": { "type": "number", "minimum": 0 },
+    "load_avg_5": { "type": "number", "minimum": 0 },
+    "load_avg_15": { "type": "number", "minimum": 0 },
+    "cpu_cores": { "type": "integer", "minimum": 1 },
+    "cpu_usage": { "type": "number", "minimum": 0 },
+    "memory_total": { "type": "integer", "minimum": 0 },
+    "memory_used": { "type": "integer", "minimum": 0 },
+    "memory_free": { "type": "integer", "minimum": 0 },
+    "memory_percent": { "type": "number", "minimum": 0 },
+    "swap_total": { "type": "integer", "minimum": 0 },
+    "swap_used": { "type": "integer", "minimum": 0 },
+    "swap_percent": { "type": "number", "minimum": 0 }
+  }
+}

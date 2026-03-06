@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "required": [
+    "available"
+  ],
+  "properties": {
+    "available": {
+      "type": "boolean"
+    },
+    "gpus": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GPUDevice"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

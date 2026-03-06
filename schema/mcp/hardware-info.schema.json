@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HardwareInfo",
+  "type": "object",
+  "properties": {
+    "battery": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["present", "status", "capacity", "health", "cycle_count", "design_capacity", "full_capacity"],
+          "properties": {
+            "present": { "type": "boolean" },
+            "status": { "type": "string" },
+            "capacity": { "type": "number", "minimum": 0 },
+            "health": { "type": "number", "minimum": 0 },
+            "cycle_count": { "type": "integer", "minimum": 0 },
+            "design_capacity": { "type": "number", "minimum": 0 },
+            "full_capacity": { "type": "number", "minimum": 0 }
+          }
+        },
+        { "type": "null" }
+      ]
+    },
+    "temperatures": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "current"],
+            "properties": {
+              "label": { "type": "string" },
+              "current": { "type": "number" },
+              "high": { "oneOf": [{ "type": "number" }, { "type": "null" }] },
+              "critical": { "oneOf": [{ "type": "number" }, { "type": "null" }] }
+            }
+          }
+        },
+        { "type": "null" }
+      ]
+    },
+    "crash_reports": {
+      "oneOf": [
+        { "type": "array", "items": { "type": "string" } },
+        { "type": "null" }
+      ]
+    }
+  }
+}

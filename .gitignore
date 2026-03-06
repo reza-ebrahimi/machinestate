@@ -1,5 +1,5 @@
 # Binary
-ubuntu-state
+machinestate
 
 # Test outputs
 test-report.html
@@ -16,3 +16,11 @@ system-report.*
 # OS
 .DS_Store
 Thumbs.db
+
+# Zig
+zig/.zig-cache/
+zig/zig-out/
+
+# Go
+go/machinestate
+go/machinestate-*

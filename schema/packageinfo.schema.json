@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "required": [
+    "updates_available",
+    "security_updates",
+    "broken_packages"
+  ],
+  "properties": {
+    "updates_available": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "updates_list": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "security_updates": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "broken_packages": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "held_packages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

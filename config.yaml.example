@@ -1,0 +1,21 @@
+# machinestate configuration file
+# Copy this file to ~/.config/machinestate/config.yaml
+
+# Disk usage thresholds (percentage)
+disk_warning_percent: 80
+disk_critical_percent: 90
+
+# Memory usage threshold (percentage)
+memory_warning_percent: 90
+
+# Battery health thresholds (percentage)
+battery_health_warning: 80
+battery_health_critical: 50
+
+# System uptime warning (days)
+# Warns if system hasn't been rebooted in this many days
+uptime_warning_days: 30
+
+# GPU temperature thresholds (Celsius)
+gpu_temp_warning: 80
+gpu_temp_critical: 90

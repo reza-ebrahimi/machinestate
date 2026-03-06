@@ -1,0 +1,34 @@
+{
+  "type": "object",
+  "required": [
+    "failed_units",
+    "zombie_count",
+    "top_cpu",
+    "top_memory"
+  ],
+  "properties": {
+    "failed_units": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "zombie_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "top_cpu": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ProcessInfo"
+      }
+    },
+    "top_memory": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ProcessInfo"
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

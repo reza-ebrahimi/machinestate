@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DockerInfo",
+  "type": "object",
+  "required": ["available", "daemon_running", "running_count", "stopped_count", "image_count", "total_image_size", "dangling_images_size"],
+  "properties": {
+    "available": { "type": "boolean" },
+    "daemon_running": { "type": "boolean" },
+    "containers": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "image", "status", "state", "created"],
+            "properties": {
+              "name": { "type": "string" },
+              "image": { "type": "string" },
+              "status": { "type": "string" },
+              "state": { "type": "string" },
+              "created": { "type": "string" },
+              "cpu_percent": { "type": "number", "minimum": 0 },
+              "memory_percent": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        { "type": "null" }
+      ]
+    },
+    "running_count": { "type": "integer", "minimum": 0 },
+    "stopped_count": { "type": "integer", "minimum": 0 },
+    "image_count": { "type": "integer", "minimum": 0 },
+    "total_image_size": { "type": "integer", "minimum": 0 },
+    "dangling_images_size": { "type": "integer", "minimum": 0 }
+  }
+}

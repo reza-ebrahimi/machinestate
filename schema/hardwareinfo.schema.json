@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "required": [],
+  "properties": {
+    "battery": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BatteryInfo"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "temperatures": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TemperatureInfo"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "crash_reports": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

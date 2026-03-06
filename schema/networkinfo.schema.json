@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "required": [
+    "interfaces",
+    "listen_ports",
+    "connectivity"
+  ],
+  "properties": {
+    "interfaces": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Interface"
+      }
+    },
+    "listen_ports": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ListenPort"
+      }
+    },
+    "connectivity": {
+      "type": "boolean"
+    },
+    "public_ip": {
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

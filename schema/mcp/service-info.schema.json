@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ServiceInfo",
+  "type": "object",
+  "required": ["failed_units", "zombie_count", "top_cpu", "top_memory"],
+  "properties": {
+    "failed_units": { "type": "array", "items": { "type": "string" } },
+    "zombie_count": { "type": "integer", "minimum": 0 },
+    "top_cpu": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pid", "name", "cpu", "memory", "user"],
+        "properties": {
+          "pid": { "type": "integer", "minimum": 0 },
+          "name": { "type": "string" },
+          "cpu": { "type": "number", "minimum": 0 },
+          "memory": { "type": "number", "minimum": 0 },
+          "user": { "type": "string" }
+        }
+      }
+    },
+    "top_memory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pid", "name", "cpu", "memory", "user"],
+        "properties": {
+          "pid": { "type": "integer", "minimum": 0 },
+          "name": { "type": "string" },
+          "cpu": { "type": "number", "minimum": 0 },
+          "memory": { "type": "number", "minimum": 0 },
+          "user": { "type": "string" }
+        }
+      }
+    }
+  }
+}
