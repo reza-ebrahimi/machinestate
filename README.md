@@ -4,9 +4,8 @@
 [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)](https://go.dev/)
 [![Zig](https://img.shields.io/badge/Zig-0.14+-F7A41D?logo=zig)](https://ziglang.org/)
 
-A fast, single-binary system state reporter for Linux. Generates comprehensive health reports in multiple formats with real-time streaming support.
+A single-binary Linux system state reporter with real-time JSONL streaming and a native MCP server for direct LLM integration. Built in Go and Zig from identical Markdown specs using Claude Opus.
 
-> Your Linux system's health in one command. No dependencies. No setup. Just answers.
 
 **Available in two implementations:**
 
