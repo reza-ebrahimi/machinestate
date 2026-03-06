@@ -206,10 +206,6 @@ make benchmark    # Run performance benchmarks
 make docker-build # Build Docker images
 ```
 
-## Contributing
-
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ## License
 
 [MIT License](LICENSE) - Copyright (c) 2026 Reza Ebrahimi
